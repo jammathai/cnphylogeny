@@ -18,5 +18,7 @@ int main()
     assert(probs->probs[2] == -INFINITY);
     assert(probs->probs[3] == 0);
 
+    free(probs);
+
     return 0;
 }

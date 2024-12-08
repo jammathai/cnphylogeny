@@ -21,7 +21,6 @@ struct cnp_node {
 
 struct cnp_node *cnp_node_new(
     size_t len,
-    copy_num *bins,
     struct cnp_node *left,
     struct cnp_node *right
 );
