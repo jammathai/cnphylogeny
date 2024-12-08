@@ -1,3 +1,5 @@
+make
+
 for src in *.c; do
     test=$(basename $src .c)
     ./$test
