@@ -31,9 +31,9 @@ void phylogeny_optimize(
     struct cnp_node *root,
     struct prob_matrix *neighbor_probs,
     struct prob_matrix *mutation_probs,
-    unsigned int burn_in,
-    unsigned int sample_rate,
-    unsigned int sample_count
+    int burn_in,
+    int sample_rate,
+    int sample_count
 );
 
 #endif
