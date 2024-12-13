@@ -30,7 +30,10 @@ void cnp_node_free(struct cnp_node *node);
 void phylogeny_optimize(
     struct cnp_node *root,
     struct prob_matrix *neighbor_probs,
-    struct prob_matrix *mutation_probs
+    struct prob_matrix *mutation_probs,
+    int burn_in,
+    int sample_rate,
+    int sample_count
 );
 
 #endif
