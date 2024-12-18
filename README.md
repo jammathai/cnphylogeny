@@ -35,7 +35,7 @@ reading CNPs from a file. In that case, we might do something like this:
 
 ```C
 for (int i = 0; i < node->len; i++)
-    node->bins[i] = /** Read a value */;
+    node->bins[i] = /* Read a value */;
 ```
 
 ### Creating a Phylogeny
