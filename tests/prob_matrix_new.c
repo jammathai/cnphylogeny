@@ -3,17 +3,24 @@
 #include <assert.h>
 #include <math.h>
 
+
+size_t cnp_len;
+copy_num max_copy_num = 1;
+double **neighbor_probs;
+double **mutation_probs;
+
+
 int main()
 {
-    struct prob_matrix *probs = prob_matrix_new(2, (double []) {
+    double **probs = prob_matrix_new((double []) {
         1, 0,
         0, 1,
     });
 
-    assert(probs->probs[0] == 0);
-    assert(probs->probs[1] == -INFINITY);
-    assert(probs->probs[2] == -INFINITY);
-    assert(probs->probs[3] == 0);
+    assert(probs[0][0] == 0);
+    assert(probs[0][1] == -INFINITY);
+    assert(probs[1][0] == -INFINITY);
+    assert(probs[1][1] == 0);
 
     free(probs);
 

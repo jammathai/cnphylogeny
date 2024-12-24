@@ -35,7 +35,7 @@ extern size_t cnp_len;
 /**
  * @brief The maximum possible copy number
  *
- * This variable must be defined before calling `cnp_node_new()` or
+ * This variable must be defined before calling `prob_matrix_new()` or
  * `phylogeny_optimize()`.
  */
 extern copy_num max_copy_num;
@@ -65,8 +65,9 @@ extern double **mutation_probs;
 /**
  * @brief Allocate and assign a probability matrix
  *
- * The new matrix will have order `max_copy_num + 1` and will store a copy of
- * `probs`, not a reference to it.
+ * The new matrix will have order `max_copy_num + 1`. Note that the
+ * probabilities will be stored as natural log probabilities; be careful when
+ * modifying an existing probability matrix.
  *
  * @param probs A pointer to the elements of the matrix, flattened into an array
  *              (often, a compound literal)
