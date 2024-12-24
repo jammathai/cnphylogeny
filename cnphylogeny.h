@@ -27,16 +27,14 @@ struct cnp_node {
 /**
  * @brief The length of a CNP
  *
- * This variable must be defined before calling `cnp_node_new()` or
- * `phylogeny_optimize()`.
+ * This variable must be defined.
  */
 extern size_t cnp_len;
 
 /**
  * @brief The maximum possible copy number
  *
- * This variable must be defined before calling `prob_matrix_new()` or
- * `phylogeny_optimize()`.
+ * This variable must be defined.
  */
 extern copy_num max_copy_num;
 
@@ -45,8 +43,9 @@ extern copy_num max_copy_num;
  *        configuration of two neighboring bins
  *
  * `neighbor_probs[i][j]` gives the log probability of observing a bin with copy
- * number `i` followed by a bin with copy number `j` (in the same CNP). This
- * variable must be defined before calling `phylogeny_optimize()`.
+ * number `i` followed by a bin with copy number `j` (in the same CNP).
+ *
+ * This variable must be defined.
  */
 extern double **neighbor_probs;
 
@@ -56,8 +55,9 @@ extern double **neighbor_probs;
  *
  * `neighbor_probs[i][j]` gives the log probability of observing a bin with copy
  * number `i` in a parent CNP and a bin with copy number `j` in the
- * corresponding position of its child. This variable must be defined before
- * calling `phylogeny_optimize()`.
+ * corresponding position of its child.
+ *
+ * This variable must be defined.
  */
 extern double **mutation_probs;
 

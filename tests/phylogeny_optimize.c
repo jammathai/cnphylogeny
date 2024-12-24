@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <string.h>
 
+
 size_t cnp_len = 5;
 copy_num max_copy_num = 2;
 double **neighbor_probs;
