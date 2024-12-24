@@ -15,23 +15,56 @@ examples below provide the basic information to get started.
 
 ## Examples
 
+Once you've included `cnphylogeny.h`, you must declare the global variables
+`cnp_len`, `max_copy_num`, `neighbor_probs`, and `mutation_probs` in order to
+compile successfully. For example:
+
+```C
+size_t cnp_len = 1000;
+copy_num max_copy_num = 5;
+double **neighbor_probs;
+double **mutation_probs;
+```
+
+You must also use `prob_matrix_new()` to assign `neighbor_probs` and
+`mutation_probs` before calling `phylogeny_optimize()`.
+
+### Defining a Probability Matrix
+
+`prob_matrix_new()` creates a new probability matrix. Note that probability
+matrices must be square, right stochastic matrices. In other words, the number
+of rows and columns must be equal and each row must sum to one. Create a
+probability matrix like this:
+
+```C
+double **mutation_probs = prob_matrix_new((double []) {
+    1, 0, 0, 0, 0, 0,
+    0.002, 0.99, 0.002, 0.002, 0.002, 0.002,
+    0.002, 0.002, 0.99, 0.002, 0.002, 0.002,
+    0.002, 0.002, 0.002, 0.99, 0.002, 0.002,
+    0.002, 0.002, 0.002, 0.002, 0.99, 0.002,
+    0.002, 0.002, 0.002, 0.002, 0.002, 0.99,
+});
+```
+
+The values of a probability matrix are stored as natural log probabilities.
+Therefore, be careful when manually assigning the probabilities of an existing
+matrix.
+
 ### Creating a Node
 
 `cnp_node_new()` creates a binary tree node that stores a copy number profile
-(CNP). In the following example, we create a node with no children whose CNP
-contains 1,000 bins (note: the bins of the new node's CNP are initialized to
-zero):
+(CNP). Create a node with no children like this:
 
 ```C
 struct cnp_node *node = cnp_node_new(
-    1000, // CNP length
     NULL, // Left child
     NULL // Right child
 );
 ```
 
-Often, we will want to set the new node's CNP contents. For example, we may be
-reading CNPs from a file. In that case, we might do something like this:
+Usually, you will want to set the new node's CNP contents. For example, you may
+be reading CNPs from a file. In that case, do something like this:
 
 ```C
 for (int i = 0; i < node->len; i++)
@@ -45,14 +78,11 @@ The simplest way to create a phylogeny is to use nested calls to
 
 ```C
 struct cnp_node *root = cnp_node_new(
-    1000,
     cnp_node_new(
-        1000,
-        cnp_node_new(1000, NULL, NULL),
+        cnp_node_new(NULL, NULL),
         cnp_node_new(
-            1000,
-            cnp_node_new(1000, NULL, NULL),
-            cnp_node_new(1000, NULL, NULL)
+            cnp_node_new(NULL, NULL),
+            cnp_node_new(NULL, NULL)
         )
     ),
     NULL
@@ -71,27 +101,6 @@ graph TD;
     C-->E;
 ```
 
-### Defining a Probability Matrix
-
-`prob_matrix_new()` creates a new probability matrix. Note that probability
-matrices must be square, right stochastic matrices. In other words, the number
-of rows and columns must be equal and each row must sum to one. Create a
-probability matrix like this:
-
-```C
-struct prob_matrix *mutation_probs = prob_matrix_new(5, (double []) {
-    1, 0, 0, 0, 0,
-    0.0025, 0.99, 0.0025, 0.0025, 0.0025,
-    0.0025, 0.0025, 0.99, 0.0025, 0.0025,
-    0.0025, 0.0025, 0.0025, 0.99, 0.0025,
-    0.0025, 0.0025, 0.0025, 0.0025, 0.99,
-});
-```
-
-The values of a probability matrix are stored as natural log probabilities.
-Therefore, be careful when manually assigning probability values after a
-probability matrix is created.
-
 ### Optimizing a Phylogeny
 
 Optimize a phylogeny using `optimize_phylogeny()` as shown:
@@ -99,8 +108,6 @@ Optimize a phylogeny using `optimize_phylogeny()` as shown:
 ```C
 phylogeny_optimize(
     root,
-    neighbor_probs,
-    mutation_probs,
     1000, // Ignore the first 1,000 iterations
     100, // Record every 100th iteration (after the first 1,000)
     50 // Stop after recording 50 iterations
