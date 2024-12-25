@@ -100,7 +100,7 @@ void cnp_node_free(struct cnp_node *node);
 
 /**
  * @brief Use Gibbs sampling to optimize a phylogeny
- * 
+ *
  * @param root A pointer to the root of the phylogeny
  * @param burn_in The number of samples to discard
  * @param sample_rate The rate at which to record samples

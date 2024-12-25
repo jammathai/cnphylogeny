@@ -114,9 +114,9 @@ phylogeny_optimize(
 );
 ```
 
-`optimize_phylogeny()` uses Gibbs sampling to optimize the internal nodes of the
+`phylogeny_optimize()` uses Gibbs sampling to optimize the internal nodes of the
 phylogeny (excluding the root). After sampling, the mode value for each bin is
-selected. Be aware that `optimize_phylogeny()` modifies values in place.
+selected. Be aware that `phylogeny_optimize()` modifies values in place.
 
 ## Thanks
 
