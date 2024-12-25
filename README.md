@@ -103,7 +103,7 @@ graph TD;
 
 ### Optimizing a Phylogeny
 
-Optimize a phylogeny using `optimize_phylogeny()` as shown:
+Optimize a phylogeny using `phylogeny_optimize()` as shown:
 
 ```C
 phylogeny_optimize(
