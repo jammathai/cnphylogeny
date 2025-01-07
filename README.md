@@ -63,12 +63,11 @@ struct cnp_node *node = cnp_node_new(
 );
 ```
 
-Usually, you will want to set the new node's CNP contents. For example, you may
-be reading CNPs from a file. In that case, do something like this:
+Usually, you will want to set the new node's CNP data; for example:
 
 ```C
-for (int i = 0; i < node->len; i++)
-    node->bins[i] = /* Read a value */;
+for (int i = 0; i < cmp_len; i++)
+    node->bins[i] = /* Get a value */;
 ```
 
 ### Creating a Phylogeny
