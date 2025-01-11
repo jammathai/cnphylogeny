@@ -90,6 +90,7 @@ struct cnp_node *cnp_node_new(
     struct cnp_node *right
 );
 
+
 /**
  * @brief Free a CNP node and its children
  *

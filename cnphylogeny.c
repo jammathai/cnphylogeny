@@ -22,7 +22,6 @@ static struct gibbs_node *gibbs_node_new(
 );
 static void gibbs_iteration(struct gibbs_node *node, bool count);
 static void gibbs_node_free(struct gibbs_node *node);
-
 static void cnp_get_mode(struct cnp_node *node, struct gibbs_node *src);
 
 
@@ -53,6 +52,7 @@ struct cnp_node *cnp_node_new(struct cnp_node *left, struct cnp_node *right)
 
     return node;
 }
+
 
 void cnp_node_free(struct cnp_node *node)
 {
@@ -114,6 +114,7 @@ static struct gibbs_node *gibbs_node_new(
     return node;
 }
 
+
 static void gibbs_iteration(struct gibbs_node *node, bool count)
 {
     if (!node || !node->left) return;
@@ -151,6 +152,7 @@ static void gibbs_iteration(struct gibbs_node *node, bool count)
     memcpy(node->left->prev, node->left->bins, cnp_len);
     if (node->right) memcpy(node->right->prev, node->right->bins, cnp_len);
 }
+
 
 static void gibbs_node_free(struct gibbs_node *node)
 {
