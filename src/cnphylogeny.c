@@ -1,4 +1,4 @@
-#include "cnphylogeny.h"
+#include "../include/cnphylogeny.h"
 
 #include <math.h>
 #include <stdbool.h>

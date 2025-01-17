@@ -2,8 +2,8 @@ TESTS := $(basename $(wildcard *.c))
 
 all: $(TESTS)
 
-%: %.c ../cnphylogeny.c
-	$(CC) -lm -g -o $@ $< ../cnphylogeny.c
+%: %.c ../src/cnphylogeny.c
+	$(CC) -lm -g -o $@ $< ../src/cnphylogeny.c
 
 .PHONY: clean
 clean:
