@@ -3,7 +3,7 @@ OBJS := $(patsubst src/%.c, build/%.o, $(wildcard src/*.c))
 build/cnphylogeny: $(OBJS)
 	$(CC) -lm -o $@ $^
 
-build/%.o: src/%.c build
+build/%.o: src/%.c | build
 	$(CC) -c -o $@ $<
 
 build:

@@ -70,9 +70,8 @@ void phylogeny_optimize(struct cnp_node *root, int burn_in, int sample_count)
 
     for (int i = 0; i < burn_in; i++)
         gibbs_iteration(gibbs_root, false);
-    for (int i = 0; i < sample_count; i++) {
+    for (int i = 0; i < sample_count; i++)
         gibbs_iteration(gibbs_root, true);
-    }
 
     cnp_get_mode(root, gibbs_root);
 
