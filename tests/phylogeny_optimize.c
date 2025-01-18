@@ -26,17 +26,17 @@ void test_iteration()
     memcpy(leaf2->bins, (copy_num []) { 2, 0, 2, 2, 2 }, 5);
     memcpy(leaf3->bins, (copy_num []) { 1, 1, 1, 2, 2 }, 5);
 
-    phylogeny_optimize(root, 0, 1, 1);
+    phylogeny_optimize(root, 0, 1);
 
     assert(!memcmp(interior1->bins, (copy_num []) { 2, 2, 1, 1, 1 }, 5));
     assert(!memcmp(interior2->bins, (copy_num []) { 0, 0, 0, 0, 0 }, 5));
 
-    phylogeny_optimize(root, 0, 1, 1);
+    phylogeny_optimize(root, 0, 1);
 
     assert(!memcmp(interior1->bins, (copy_num []) { 2, 2, 1, 1, 1 }, 5));
     assert(!memcmp(interior2->bins, (copy_num []) { 2, 1, 1, 2, 2 }, 5));
 
-    phylogeny_optimize(root, 0, 1, 1);
+    phylogeny_optimize(root, 0, 1);
 
     assert(!memcmp(root->bins, (copy_num []) { 2, 2, 2, 2, 2 }, 5));
     assert(!memcmp(interior1->bins, (copy_num []) { 2, 2, 1, 1, 2 }, 5));
@@ -55,7 +55,7 @@ void test_burn_in()
     memcpy(leaf2->bins, (copy_num []) { 2, 0, 2, 2, 2 }, 5);
     memcpy(leaf3->bins, (copy_num []) { 1, 1, 1, 2, 2 }, 5);
 
-    phylogeny_optimize(root, 2, 1, 1);
+    phylogeny_optimize(root, 2, 1);
 
     assert(!memcmp(root->bins, (copy_num []) { 2, 2, 2, 2, 2 }, 5));
     assert(!memcmp(interior1->bins, (copy_num []) { 2, 2, 1, 1, 2 }, 5));
@@ -73,30 +73,12 @@ void test_mode() {
     memcpy(leaf2->bins, (copy_num []) { 2, 0, 2, 2, 2 }, 5);
     memcpy(leaf3->bins, (copy_num []) { 1, 1, 1, 2, 2 }, 5);
 
-    phylogeny_optimize(root, 0, 1, 3);
+    phylogeny_optimize(root, 0, 3);
 
     assert(!memcmp(root->bins, (copy_num []) { 2, 2, 2, 2, 2 }, 5));
     assert(!memcmp(interior1->bins, (copy_num []) { 2, 2, 1, 1, 1 }, 5));
     assert(!memcmp(leaf1->bins, (copy_num []) { 2, 2, 1, 1, 1 }, 5));
     assert(!memcmp(interior2->bins, (copy_num []) { 2, 1, 1, 2, 2 }, 5));
-    assert(!memcmp(leaf2->bins, (copy_num []) { 2, 0, 2, 2, 2 }, 5));
-    assert(!memcmp(leaf3->bins, (copy_num []) { 1, 1, 1, 2, 2 }, 5));
-}
-
-void test_sample_rate() {
-    memcpy(root->bins, (copy_num []) { 2, 2, 2, 2, 2 }, 5);
-    memcpy(interior1->bins, (copy_num []) { 0, 0, 0, 0, 0 }, 5);
-    memcpy(leaf1->bins, (copy_num []) { 2, 2, 1, 1, 1 }, 5);
-    memcpy(interior2->bins, (copy_num []) { 0, 0, 0, 0, 0 }, 5);
-    memcpy(leaf2->bins, (copy_num []) { 2, 0, 2, 2, 2 }, 5);
-    memcpy(leaf3->bins, (copy_num []) { 1, 1, 1, 2, 2 }, 5);
-
-    phylogeny_optimize(root, 0, 2, 2);
-
-    assert(!memcmp(root->bins, (copy_num []) { 2, 2, 2, 2, 2 }, 5));
-    assert(!memcmp(interior1->bins, (copy_num []) { 2, 2, 1, 1, 1 }, 5));
-    assert(!memcmp(leaf1->bins, (copy_num []) { 2, 2, 1, 1, 1 }, 5));
-    assert(!memcmp(interior2->bins, (copy_num []) { 0, 0, 0, 0, 0 }, 5));
     assert(!memcmp(leaf2->bins, (copy_num []) { 2, 0, 2, 2, 2 }, 5));
     assert(!memcmp(leaf3->bins, (copy_num []) { 1, 1, 1, 2, 2 }, 5));
 }
@@ -134,7 +116,6 @@ int main()
     test_iteration();
     test_burn_in();
     test_mode();
-    test_sample_rate();
 
     free(neighbor_probs);
     free(mutation_probs);

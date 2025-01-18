@@ -1,4 +1,5 @@
 .vscode
+build
 tests/*
 !tests/Makefile
 !tests/test.sh

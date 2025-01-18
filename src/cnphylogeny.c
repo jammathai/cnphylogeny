@@ -64,12 +64,7 @@ void cnp_node_free(struct cnp_node *node)
 }
 
 
-void phylogeny_optimize(
-    struct cnp_node *root,
-    int burn_in,
-    int sample_rate,
-    int sample_count
-)
+void phylogeny_optimize(struct cnp_node *root, int burn_in, int sample_count)
 {
     struct gibbs_node *gibbs_root = gibbs_node_new(root, NULL);
 
@@ -77,8 +72,6 @@ void phylogeny_optimize(
         gibbs_iteration(gibbs_root, false);
     for (int i = 0; i < sample_count; i++) {
         gibbs_iteration(gibbs_root, true);
-        for (int j = 0; j < sample_rate - 1; j++)
-            gibbs_iteration(gibbs_root, false);
     }
 
     cnp_get_mode(root, gibbs_root);

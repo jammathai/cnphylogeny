@@ -40,17 +40,6 @@ extern copy_num max_copy_num;
 
 /**
  * @brief A matrix that stores the natural log probabilities of every possible
- *        configuration of two neighboring bins
- *
- * `neighbor_probs[i][j]` gives the log probability of observing a bin with copy
- * number `i` followed by a bin with copy number `j` (in the same CNP).
- *
- * This variable must be defined.
- */
-extern double **neighbor_probs;
-
-/**
- * @brief A matrix that stores the natural log probabilities of every possible
  *        configuration of a parent and child bin
  *
  * `neighbor_probs[i][j]` gives the log probability of observing a bin with copy
@@ -60,6 +49,17 @@ extern double **neighbor_probs;
  * This variable must be defined.
  */
 extern double **mutation_probs;
+
+/**
+ * @brief A matrix that stores the natural log probabilities of every possible
+ *        configuration of two neighboring bins
+ *
+ * `neighbor_probs[i][j]` gives the log probability of observing a bin with copy
+ * number `i` followed by a bin with copy number `j` (in the same CNP).
+ *
+ * This variable must be defined.
+ */
+extern double **neighbor_probs;
 
 
 /**
@@ -104,15 +104,9 @@ void cnp_node_free(struct cnp_node *node);
  *
  * @param root A pointer to the root of the phylogeny
  * @param burn_in The number of samples to discard
- * @param sample_rate The rate at which to record samples
  * @param sample_count The number of samples to record
  */
-void phylogeny_optimize(
-    struct cnp_node *root,
-    int burn_in,
-    int sample_rate,
-    int sample_count
-);
+void phylogeny_optimize(struct cnp_node *root, int burn_in, int sample_count);
 
 
 #endif
