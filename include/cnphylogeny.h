@@ -29,7 +29,7 @@ struct cnp_node {
  *
  * This variable must be defined.
  */
-extern size_t cnp_len;
+extern int cnp_len;
 
 /**
  * @brief The maximum possible copy number

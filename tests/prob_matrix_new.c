@@ -4,7 +4,7 @@
 #include <math.h>
 
 
-size_t cnp_len;
+int cnp_len;
 copy_num max_copy_num = 1;
 double **neighbor_probs;
 double **mutation_probs;

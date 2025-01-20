@@ -2,13 +2,14 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../include/cnphylogeny.h"
 
 
-const size_t LIST_INIT_SIZE = 256;
+const int LIST_INIT_SIZE = 256;
 
-size_t cnp_len;
+int cnp_len;
 copy_num max_copy_num;
 double **mutation_probs;
 double **neighbor_probs;
@@ -22,6 +23,8 @@ static char *output;
 
 static void print_usage();
 static double **prob_matrix_read(char *filename);
+static struct cnp_node *phylogeny_read(char *name);
+static FILE *file_open(char *filename);
 
 
 int main(int argc, char **argv)
@@ -52,6 +55,13 @@ int main(int argc, char **argv)
 
     mutation_probs = prob_matrix_read(mutation_probs_filename);
     neighbor_probs = prob_matrix_read(neighbor_probs_filename);
+
+    if (optind >= argc) {
+        print_usage();
+        return EXIT_FAILURE;
+    }
+
+    struct cnp_node *root = phylogeny_read(argv[optind]);
 
     return EXIT_SUCCESS;
 }
@@ -86,11 +96,7 @@ static void print_usage()
 
 static double **prob_matrix_read(char *filename)
 {
-    FILE *file = fopen(filename, "r");
-    if (!file) {
-        fprintf(stderr, "Error: Could not open %s\n", filename);
-        exit(EXIT_FAILURE);
-    }
+    FILE *file = file_open(filename);
 
     size_t probs_size = LIST_INIT_SIZE;
     int probs_len = 0;
@@ -135,4 +141,66 @@ static double **prob_matrix_read(char *filename)
     }
 
     return prob_matrix_new(probs);
+}
+
+
+static struct cnp_node *phylogeny_read(char *name)
+{
+    char filename[strlen(name) + 5];
+    strncpy(filename, name, strlen(name) + 1);
+
+    strcat(filename, ".csv");
+    FILE *cnps_file = file_open(filename);
+
+    int cnps_size = LIST_INIT_SIZE;
+    int cnps_len = 0;
+    int row_count = 0;
+    int col_count = 0;
+    copy_num *cnps = malloc(cnps_size * sizeof(copy_num));
+    copy_num bin;
+    char next_char;
+
+    while (fscanf(cnps_file, "%hhu", &bin) != EOF) {
+        col_count++;
+
+        next_char = getc(cnps_file);
+        if (next_char == '\n' || next_char == EOF) {
+            row_count++;
+            if (cnp_len) {
+                if (col_count != cnp_len) {
+                    fprintf(
+                        stderr,
+                        "Error: Row %d of %s has %d columns (expected %d)\n",
+                        row_count,
+                        filename,
+                        col_count,
+                        cnp_len
+                    );
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else {
+                cnp_len = col_count;
+            }
+            col_count = 0;
+        }
+
+        if (cnps_len == cnps_size) {
+            cnps_size *= 2;
+            cnps = realloc(cnps, cnps_size * sizeof(copy_num));
+        }
+
+        cnps[cnps_len++] = bin;
+    }
+}
+
+
+static FILE *file_open(char *filename)
+{
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        fprintf(stderr, "Error: Could not open %s\n", filename);
+        exit(EXIT_FAILURE);
+    }
+    return file;
 }
