@@ -44,9 +44,14 @@ double **prob_matrix_new(double *probs)
 }
 
 
-struct cnp_node *cnp_node_new(struct cnp_node *left, struct cnp_node *right)
+struct cnp_node *cnp_node_new(
+    copy_num *cnp,
+    struct cnp_node *left,
+    struct cnp_node *right
+)
 {
     struct cnp_node *node = calloc(1, sizeof(struct cnp_node) + cnp_len);
+    if (cnp) memcpy(node->bins, cnp, cnp_len);
     node->left = left;
     node->right = right;
 

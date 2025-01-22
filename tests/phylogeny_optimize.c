@@ -98,11 +98,14 @@ int main()
     });
 
     root = cnp_node_new(
+        NULL,
         cnp_node_new(
-            cnp_node_new(NULL, NULL),
+            NULL,
+            cnp_node_new(NULL, NULL, NULL),
             cnp_node_new(
-                cnp_node_new(NULL, NULL),
-                cnp_node_new(NULL, NULL)
+                NULL,
+                cnp_node_new(NULL, NULL, NULL),
+                cnp_node_new(NULL, NULL, NULL)
             )
         ),
         NULL

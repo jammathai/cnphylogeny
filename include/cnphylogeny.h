@@ -79,13 +79,13 @@ double **prob_matrix_new(double *probs);
 /**
  * @brief Create a new CNP node
  *
- * This function assigns each bin a copy number of 0.
- *
+ * @param cnp A pointer a CNP, or `NULL` to initialize all bins to zero
  * @param left The left child
  * @param right The right child
  * @return A pointer to the new node
  */
 struct cnp_node *cnp_node_new(
+    copy_num *cnp,
     struct cnp_node *left,
     struct cnp_node *right
 );

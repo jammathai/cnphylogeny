@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <getopt.h>
 #include <math.h>
 #include <stdio.h>
@@ -21,11 +22,17 @@ static char *neighbor_probs_filename = "data/neighbor-probs.csv";
 static char *output;
 
 
-static void print_usage();
 static double **read_prob_matrix(char *filename);
 static struct cnp_node *read_phylogeny(char *name);
 static copy_num *read_cnps(char *filename);
-static struct cnp_node *parse_newick(char *start, char *end);
+static struct cnp_node *parse_newick(char *start, char *end, copy_num *cnps);
+static void print_phylogeny(
+    struct cnp_node *node,
+    struct cnp_node *parent,
+    char *prefix
+);
+static void print_node(struct cnp_node *node, struct cnp_node *parent);
+static void print_usage();
 static FILE *file_open(char *filename);
 
 
@@ -65,34 +72,9 @@ int main(int argc, char **argv)
 
     struct cnp_node *root = read_phylogeny(argv[optind]);
 
+    print_phylogeny(root, NULL, "");
+
     return EXIT_SUCCESS;
-}
-
-
-static void print_usage()
-{
-    printf(
-        "Usage: cnphylogeny [options] <phylogeny>\n"
-        "\n"
-        "Arguments:\n"
-        "    <phylogeny>  The shared basename of the Newick file and CSV file that\n"
-        "                 define a phylogeny\n"
-        "\n"
-        "Options:\n"
-        "    -b <int>        Number of burn-in samples (default: %d)\n"
-        "    -c <int>        Number of samples to record (default: %d)\n"
-        "    -h              Print this message and exit\n"
-        "    -m <csv>        Source mutation probabilities from the specified CSV file\n"
-        "                    (default: %s)\n"
-        "    -n <csv>        Source neighbor probabilities from the specified CSV file\n"
-        "                    (default: %s)\n"
-        "    -o <phylogeny>  Write the optimized phylogeny to <phylogeny>.nwk and\n"
-        "                    <phylogeny>.csv (default: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS])\n",
-        burn_in,
-        sample_count,
-        mutation_probs_filename,
-        neighbor_probs_filename
-    );
 }
 
 
@@ -167,7 +149,7 @@ static struct cnp_node *read_phylogeny(char *name)
 
     fclose(file);
 
-    return parse_newick(newick, newick + file_size);
+    return parse_newick(newick, newick + file_size, cnps);
 }
 
 
@@ -222,9 +204,147 @@ static copy_num *read_cnps(char *filename)
 }
 
 
-static struct cnp_node *parse_newick(char *start, char *end)
+static struct cnp_node *parse_newick(char *start, char *end, copy_num *cnps)
 {
-    return NULL;
+    int id;
+    struct cnp_node *left = NULL;
+    struct cnp_node *right = NULL;
+
+    if (*start == '(') {
+        char *i;
+        char *comma = NULL;
+        int level = 1;
+
+        for (i = start + 1;; i++) {
+            if (*i == '(') {
+                level++;
+            }
+            else if (*i == ')') {
+                level--;
+                if (level == 0) break;
+            }
+            else if (*i == ',' && level == 1) {
+                comma = i;
+            }
+        }
+
+        if (comma) {
+            left = parse_newick(start + 1, comma, cnps);
+            right = parse_newick(comma + 1, i, cnps);
+        }
+        else {
+            left = parse_newick(start + 1, i, cnps);
+        }
+
+        id = strtol(i + 1, NULL, 10);
+    }
+    else {
+        id = strtol(start, NULL, 10);
+    }
+
+    return cnp_node_new(cnps + id * cnp_len, left, right);
+}
+
+
+static void print_phylogeny(
+    struct cnp_node *node,
+    struct cnp_node *parent,
+    char *prefix
+)
+{
+    if (!node) return;
+
+    fputs(prefix, stdout);
+    putc('-', stdout);
+
+    print_node(node, parent);
+
+    if (node->right) {
+        char left_prefix[strlen(prefix) + 3];
+        strcpy(left_prefix, prefix);
+        strcat(left_prefix, " |");
+        print_phylogeny(node->left, node, left_prefix);
+
+        char right_prefix[strlen(prefix) + 3];
+        strcpy(right_prefix, prefix);
+        strcat(right_prefix, "  ");
+        print_phylogeny(node->right, node, right_prefix);
+    }
+    else {
+        char child_prefix[strlen(prefix) + 3];
+        strcpy(child_prefix, prefix);
+        strcat(child_prefix, "  ");
+        print_phylogeny(node->left, node, child_prefix);
+    }
+}
+
+
+static void print_node(struct cnp_node *node, struct cnp_node *parent)
+{
+    if (!parent) {
+        puts(" (Root)");
+        return;
+    }
+
+    int start = 0;
+    int end;
+    int i;
+    int j;
+    bool unchanged = true;
+
+    while (start < cnp_len) {
+        i = start;
+        j = start;
+        while (i < cnp_len - 1 && node->bins[i] == node->bins[i + 1]) i++;
+        while (j < cnp_len - 1 && parent->bins[j] == parent->bins[j + 1]) j++;
+        end = i < j ? i : j;
+
+        if (node->bins[end] != parent->bins[end]) {
+            printf(
+                " [%d,%d]:%d->%d",
+                start,
+                end,
+                parent->bins[end],
+                node->bins[end]
+            );
+            unchanged = false;
+        }
+
+        start = end + 1;
+    }
+
+    if (unchanged) {
+        fputs(" (Unchanged)", stdout);
+    }
+
+    putc('\n', stdout);
+}
+
+
+static void print_usage()
+{
+    printf(
+        "Usage: cnphylogeny [options] <phylogeny>\n"
+        "\n"
+        "Arguments:\n"
+        "    <phylogeny>  The shared basename of the Newick file and CSV file that\n"
+        "                 define a phylogeny\n"
+        "\n"
+        "Options:\n"
+        "    -b <int>        Number of burn-in samples (default: %d)\n"
+        "    -c <int>        Number of samples to record (default: %d)\n"
+        "    -h              Print this message and exit\n"
+        "    -m <csv>        Source mutation probabilities from the specified CSV file\n"
+        "                    (default: %s)\n"
+        "    -n <csv>        Source neighbor probabilities from the specified CSV file\n"
+        "                    (default: %s)\n"
+        "    -o <phylogeny>  Write the optimized phylogeny to <phylogeny>.nwk and\n"
+        "                    <phylogeny>.csv (default: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS])\n",
+        burn_in,
+        sample_count,
+        mutation_probs_filename,
+        neighbor_probs_filename
+    );
 }
 
 
