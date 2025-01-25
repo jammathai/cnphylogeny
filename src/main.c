@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "../include/cnphylogeny.h"
 
@@ -20,6 +21,7 @@ static int sample_count = 1000000;
 static char *mutation_probs_filename = "data/mutation-probs.csv";
 static char *neighbor_probs_filename = "data/neighbor-probs.csv";
 static char *output;
+static struct cnp_node *root;
 
 
 static double **read_prob_matrix(char *filename);
@@ -56,6 +58,9 @@ int main(int argc, char **argv)
             case 'n':
                 neighbor_probs_filename = optarg;
                 break;
+            case 'o':
+                output = optarg;
+                break;
             default:
                 print_usage();
                 return EXIT_FAILURE;
@@ -70,8 +75,22 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    struct cnp_node *root = read_phylogeny(argv[optind]);
+    root = read_phylogeny(argv[optind]);
 
+    if (!output) {
+        time_t now = time(NULL);
+        struct tm *tm = localtime(&now);
+        char timestamp[20];
+        strftime(timestamp, 20, "%Y-%m-%dT%H:%M:%S", tm);
+        output = timestamp;
+    }
+
+    printf("%s (before optimization):\n", argv[optind]);
+    print_phylogeny(root, NULL, "");
+
+    phylogeny_optimize(root, burn_in, sample_count);
+
+    printf("\n%s (after optimization):\n", output);
     print_phylogeny(root, NULL, "");
 
     return EXIT_SUCCESS;
