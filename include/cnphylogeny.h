@@ -18,6 +18,7 @@ typedef unsigned char copy_num;
  * left child, it shouldn't have a right child either.
  */
 struct cnp_node {
+    int id; /** The ID of the CNP */
     struct cnp_node *left; /** The left child */
     struct cnp_node *right; /** The right child */
     copy_num bins[]; /** The bins of the CNP */
@@ -79,12 +80,14 @@ double **prob_matrix_new(double *probs);
 /**
  * @brief Create a new CNP node
  *
+ * @param id The ID of the CNP
  * @param cnp A pointer a CNP, or `NULL` to initialize all bins to zero
  * @param left The left child
  * @param right The right child
  * @return A pointer to the new node
  */
 struct cnp_node *cnp_node_new(
+    int id,
     copy_num *cnp,
     struct cnp_node *left,
     struct cnp_node *right

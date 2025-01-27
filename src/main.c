@@ -21,13 +21,17 @@ static int sample_count = 1000000;
 static char *mutation_probs_filename = "data/mutation-probs.csv";
 static char *neighbor_probs_filename = "data/neighbor-probs.csv";
 static char *output;
+static int cnps_len;
+static copy_num *cnps;
 static struct cnp_node *root;
 
 
 static double **read_prob_matrix(char *filename);
 static struct cnp_node *read_phylogeny(char *name);
+static void write_phylogeny(char *name);
 static copy_num *read_cnps(char *filename);
-static struct cnp_node *parse_newick(char *start, char *end, copy_num *cnps);
+static struct cnp_node *parse_newick(char *start, char *end);
+static void write_node(struct cnp_node *node, FILE *file);
 static void print_phylogeny(
     struct cnp_node *node,
     struct cnp_node *parent,
@@ -35,7 +39,7 @@ static void print_phylogeny(
 );
 static void print_node(struct cnp_node *node, struct cnp_node *parent);
 static void print_usage();
-static FILE *file_open(char *filename);
+static FILE *file_open(char *filename, char *modes);
 
 
 int main(int argc, char **argv)
@@ -93,13 +97,15 @@ int main(int argc, char **argv)
     printf("\n%s (after optimization):\n", output);
     print_phylogeny(root, NULL, "");
 
+    write_phylogeny(output);
+
     return EXIT_SUCCESS;
 }
 
 
 static double **read_prob_matrix(char *filename)
 {
-    FILE *file = file_open(filename);
+    FILE *file = file_open(filename, "r");
 
     size_t probs_size = LIST_INIT_SIZE;
     int probs_len = 0;
@@ -153,34 +159,60 @@ static struct cnp_node *read_phylogeny(char *name)
     strncpy(filename, name, strlen(name) + 1);
 
     strcat(filename, ".csv");
-    copy_num *cnps = read_cnps(filename);
+    read_cnps(filename);
 
     filename[strlen(name)] = '\0';
     strcat(filename, ".nwk");
-    FILE *file = file_open(filename);
+    FILE *file = file_open(filename, "r");
+
     fseek(file, 0, SEEK_END);
     long file_size = ftell(file);
     fseek(file, 0, SEEK_SET);
-
     char newick[file_size + 1];
     fread(newick, 1, file_size, file);
     newick[file_size] = '\0';
 
     fclose(file);
 
-    return parse_newick(newick, newick + file_size, cnps);
+    return parse_newick(newick, newick + file_size);
+}
+
+
+static void write_phylogeny(char *name)
+{
+    char filename[strlen(name) + 5];
+    strncpy(filename, name, strlen(name) + 1);
+
+    strcat(filename, ".nwk");
+    FILE *file = file_open(filename, "w");
+    write_node(root, file);
+    fclose(file);
+
+    filename[strlen(name)] = '\0';
+    strcat(filename, ".csv");
+    file = file_open(filename, "w");
+
+    for (int i = 0; i < cnps_len / cnp_len; i++) {
+        for (int j = 0; j < cnp_len; j++) {
+            fprintf(file, "%hhu", cnps[i * cnp_len + j]);
+            if (j < cnp_len - 1) putc(',', file);
+            else putc('\n', file);
+        }
+    }
+
+    fclose(file);
 }
 
 
 static copy_num *read_cnps(char *filename)
 {
-    FILE *file = file_open(filename);
+    FILE *file = file_open(filename, "r");
 
     int cnps_size = LIST_INIT_SIZE;
-    int cnps_len = 0;
+    cnps_len = 0;
     int row_count = 0;
     int col_count = 0;
-    copy_num *cnps = malloc(cnps_size * sizeof(copy_num));
+    cnps = malloc(cnps_size * sizeof(copy_num));
     copy_num bin;
     char next_char;
 
@@ -217,13 +249,13 @@ static copy_num *read_cnps(char *filename)
         cnps[cnps_len++] = bin;
     }
 
-    fclose(file);
+    printf("cnps_len: %d\n", cnps_len);
 
-    return cnps;
+    fclose(file);
 }
 
 
-static struct cnp_node *parse_newick(char *start, char *end, copy_num *cnps)
+static struct cnp_node *parse_newick(char *start, char *end)
 {
     int id;
     struct cnp_node *left = NULL;
@@ -248,11 +280,11 @@ static struct cnp_node *parse_newick(char *start, char *end, copy_num *cnps)
         }
 
         if (comma) {
-            left = parse_newick(start + 1, comma, cnps);
-            right = parse_newick(comma + 1, i, cnps);
+            left = parse_newick(start + 1, comma);
+            right = parse_newick(comma + 1, i);
         }
         else {
-            left = parse_newick(start + 1, i, cnps);
+            left = parse_newick(start + 1, i);
         }
 
         id = strtol(i + 1, NULL, 10);
@@ -261,7 +293,27 @@ static struct cnp_node *parse_newick(char *start, char *end, copy_num *cnps)
         id = strtol(start, NULL, 10);
     }
 
-    return cnp_node_new(cnps + id * cnp_len, left, right);
+    return cnp_node_new(id, cnps + id * cnp_len, left, right);
+}
+
+
+static void write_node(struct cnp_node *node, FILE *file)
+{
+    if (!node) return;
+
+    if (node->left) {
+        putc('(', file);
+        write_node(node->left, file);
+        if (node->right) {
+            putc(',', file);
+            write_node(node->right, file);
+        }
+        putc(')', file);
+    }
+
+    fprintf(file, "%d", node->id);
+
+    memcpy(cnps + node->id * cnp_len, node->bins, cnp_len);
 }
 
 
@@ -367,9 +419,9 @@ static void print_usage()
 }
 
 
-static FILE *file_open(char *filename)
+static FILE *file_open(char *filename, char *modes)
 {
-    FILE *file = fopen(filename, "r");
+    FILE *file = fopen(filename, modes);
     if (!file) {
         fprintf(stderr, "Error: Could not open %s\n", filename);
         exit(EXIT_FAILURE);
