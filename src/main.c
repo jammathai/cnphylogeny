@@ -249,8 +249,6 @@ static copy_num *read_cnps(char *filename)
         cnps[cnps_len++] = bin;
     }
 
-    printf("cnps_len: %d\n", cnps_len);
-
     fclose(file);
 }
 

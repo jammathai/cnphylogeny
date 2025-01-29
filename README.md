@@ -1,121 +1,187 @@
 # cnphylogeny
 
-**cnphylogeny** is a small C library for phylogeny inference using copy number
+**cnphylogeny** provides tools for phylogeny inference using copy number
 aberrations. Phylogenies are represented as Markov random fields and optimized
-with Gibbs sampling.
+with Gibbs sampling. **cnphylogeny** provides a C library and a CLI.
 
 ## Getting Started
 
-To use **cnphylogeny**, simply add `cnphylogeny.c` and `cnphylogeny.h` to your
-project. Since **cnphylogeny** uses `<math.h>`, use the `-lm` flag during
-compilation.
+To install the **cnphylogeny** CLI, run the following commands:
 
-`cnphylogeny.h` contains detailed documentation in the form of docstrings. The
-examples below provide the basic information to get started.
+```
+git clone https://github.com/jammathai/cnphylogeny.git
+cd cnphylogeny
+make
+```
+
+Running `make` should produce the following output:
+
+```
+mkdir build
+cc -c -o build/cnphylogeny.o src/cnphylogeny.c
+cc -c -o build/main.o src/main.c
+cc -lm -o build/cnphylogeny build/cnphylogeny.o build/main.o
+```
+
+If desired, add `build/cnphylogeny` to `PATH`. Run `cnphylogeny -h` to print
+usage information.
+
+To use the **cnphylogeny** library, simply download
+[`cnphylogeny.c`](src/cnphylogeny.c) and
+[`cnphylogeny.h`](include/cnphylogeny.h) and add them to your C project. Since
+**cnphylogeny** uses `<math.h>`, use the `-lm` flag during compilation.
 
 ## Examples
 
-Once you've included `cnphylogeny.h`, you must declare the global variables
-`cnp_len`, `max_copy_num`, `neighbor_probs`, and `mutation_probs` in order to
-compile successfully. For example:
-
-```C
-size_t cnp_len = 1000;
-copy_num max_copy_num = 5;
-double **neighbor_probs;
-double **mutation_probs;
-```
-
-You must also use `prob_matrix_new()` to assign `neighbor_probs` and
-`mutation_probs` before calling `phylogeny_optimize()`.
+The following examples provide an introduction to the CLI. For library
+documentation, see [`cnphylogeny.h`](include/cnphylogeny.h).
 
 ### Defining a Probability Matrix
 
-`prob_matrix_new()` creates a new probability matrix. Note that probability
-matrices must be square, right stochastic matrices. In other words, the number
-of rows and columns must be equal and each row must sum to one. Create a
-probability matrix like this:
+Probability matrices must be square, right stochastic matrices. In other words,
+the number of rows and columns must be equal and each row must sum to one. If
+the maximum possible copy number is $n$, probability matrices must have order
+$n + 1$. Probability matrices are stored as CSV files. For example, a mutation
+probability matrix for copy numbers up to five might look like this:
 
-```C
-double **mutation_probs = prob_matrix_new((double []) {
-    1, 0, 0, 0, 0, 0,
-    0.002, 0.99, 0.002, 0.002, 0.002, 0.002,
-    0.002, 0.002, 0.99, 0.002, 0.002, 0.002,
-    0.002, 0.002, 0.002, 0.99, 0.002, 0.002,
-    0.002, 0.002, 0.002, 0.002, 0.99, 0.002,
-    0.002, 0.002, 0.002, 0.002, 0.002, 0.99,
-});
+```csv
+1,0,0,0,0,0
+0.0002,0.999,0.0002,0.0002,0.0002,0.0002
+0.0002,0.0002,0.999,0.0002,0.0002,0.0002
+0.0002,0.0002,0.0002,0.999,0.0002,0.0002
+0.0002,0.0002,0.0002,0.0002,0.999,0.0002
+0.0002,0.0002,0.0002,0.0002,0.0002,0.999
 ```
 
-The values of a probability matrix are stored as natural log probabilities.
-Therefore, be careful when manually assigning the probabilities of an existing
-matrix.
+When running `cnphylogeny`, use `-m` flag to specify the mutation probability
+matrix (default: [`mutation-probs.csv`](data/mutation-probs.csv)) and `-n` to
+specify the neighbor probability matrix (default:
+[`neighbor-probs.csv`](data/mutation-probs.csv)).
 
-### Creating a Node
+### Defining a Phylogeny
 
-`cnp_node_new()` creates a binary tree node that stores a copy number profile
-(CNP). Create a node with no children like this:
+A phylogeny is defined by two files with the same basename:
 
-```C
-struct cnp_node *node = cnp_node_new(
-    NULL, // Left child
-    NULL // Right child
-);
-```
+- A CSV file that stores each node's CNP; for example, `my-phylogeny.csv`:
 
-Usually, you will want to set the new node's CNP data; for example:
+  ```csv
+  2,2,2,2,2
+  0,0,0,0,0
+  2,2,1,1,1
+  0,0,0,0,0
+  2,0,2,2,2
+  1,1,1,2,2
+  ```
 
-```C
-for (int i = 0; i < cnp_len; i++)
-    node->bins[i] = /* Get a value */;
-```
+  This file must have a row for each phylogeny node.
 
-### Creating a Phylogeny
+- A [Newick (`.nwk`) file](https://en.wikipedia.org/wiki/Newick_format) that
+  stores the phylogeny's structure; for example, `my-phylogeny.nwk`:
 
-The simplest way to create a phylogeny is to use nested calls to
-`cnp_node_new()` to define a tree structure, as shown below:
+  ```nwk
+  ((2,(4,5)3)1)0
+  ```
 
-```C
-struct cnp_node *root = cnp_node_new(
-    cnp_node_new(
-        cnp_node_new(NULL, NULL),
-        cnp_node_new(
-            cnp_node_new(NULL, NULL),
-            cnp_node_new(NULL, NULL)
-        )
-    ),
-    NULL
-);
-```
+  The node names in this file correspond to the rows of the associated CSV file
+  (rows are zero-indexed). In this example, the root node (0) corresponds to the
+  first row of `my-phylogeny.csv`, which stores the CNP $(2, 2, 2, 2, 2)$.
 
-Note that, when a node has only one child, it should be the left child. This
-allows us to assert that any node with no left child is a leaf node. The
-phylogeny created in the example above looks like this:
+When running `cnphylogeny`, use the shared basename of these two files to refer
+to the phylogeny. For example, `cnphylogeny my-phylogney` optimizes the
+phylogeny defined above, which looks like this:
 
 ```mermaid
 graph TD;
-    root-->A-->B;
-    A-->C;
-    C-->D;
-    C-->E;
+    0("(2, 2, 2, 2, 2)")-->1("(0, 0, 0, 0, 0)")-->2("(2, 2, 1, 1, 1)");
+    1-->3("(0, 0, 0, 0, 0)")-->4("(2, 0, 2, 2, 2)");
+    3-->5("(1, 1, 1, 2, 2)");
 ```
 
 ### Optimizing a Phylogeny
 
-Optimize a phylogeny using `phylogeny_optimize()` as shown:
+Running `cnphylogeny -h` prints the following usage message:
 
-```C
-phylogeny_optimize(
-    root,
-    1000, // Ignore the first 1,000 iterations
-    100, // Record every 100th iteration (after the first 1,000)
-    50 // Stop after recording 50 iterations
-);
+```
+Usage: cnphylogeny [options] <phylogeny>
+
+Arguments:
+    <phylogeny>  The shared basename of the Newick file and CSV file that
+                 define a phylogeny
+
+Options:
+    -b <int>        Number of burn-in samples (default: 1000000)
+    -c <int>        Number of samples to record (default: 1000000)
+    -h              Print this message and exit
+    -m <csv>        Source mutation probabilities from the specified CSV file
+                    (default: data/mutation-probs.csv)
+    -n <csv>        Source neighbor probabilities from the specified CSV file
+                    (default: data/neighbor-probs.csv)
+    -o <phylogeny>  Write the optimized phylogeny to <phylogeny>.nwk and
+                    <phylogeny>.csv (default: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS])
 ```
 
-`phylogeny_optimize()` uses Gibbs sampling to optimize the internal nodes of the
-phylogeny (excluding the root). After sampling, the mode value for each bin is
-selected. Be aware that `phylogeny_optimize()` modifies values in place.
+`cnphylogeny` prints the phylogeny before and after optimization. Since CNPs are
+usually far too long to be human-readable, each node is printed in relation to
+its parent. For example, consider a parent node and a child node with the
+following CNPs:
+
+| Parent            | Child             |
+| :---------------: | :---------------: |
+| $(0, 0, 0, 0, 0)$ | $(2, 2, 0, 1, 1)$ |
+
+These CNPs can be broken up into two regions:
+
+| Interval | Parent   | Child    | Mutation? |
+| :------: | :------: | :------: | :-------: |
+| $[0, 1]$ | $(0, 0)$ | $(2, 2)$ | Yes       |
+| $[2, 2]$ | $(0)$    | $(0)$    | No        |
+| $[3, 4]$ | $(0, 0)$ | $(1, 1)$ | Yes       |
+
+This differences between these regions are printed:
+
+```
+[0,1]:0->2 [3,4]:0->1
+```
+
+The example phylogeny `my-phylogeny`, defined above, is printed like this:
+
+```
+- (Root)
+  - [0,4]:2->0
+   |- [0,1]:0->2 [2,4]:0->1
+    - (Unchanged)
+     |- [0,0]:0->2 [2,4]:0->2
+      - [0,2]:0->1 [3,4]:0->2
+```
+
+We might optimize this phylogeny by running the following command:
+
+```
+cnphylogeny -b 10 -c 20 -o my-optimized-phylogeny my-phylogeny
+```
+
+This will optimize `my-phylogeny`, ignoring the first 10 iterations of Gibbs
+sampling and subsequently recording 20 samples. The resulting phylogeny will be
+written to `my-optimized-phylogeny.csv` and `my-optimized-phylogeny.nwk`. This
+command should produce the following output:
+
+```
+my-phylogeny (before optimization):
+- (Root)
+  - [0,4]:2->0
+   |- [0,1]:0->2 [2,4]:0->1
+    - (Unchanged)
+     |- [0,0]:0->2 [2,4]:0->2
+      - [0,2]:0->1 [3,4]:0->2
+
+my-optimized-phylogeny (after optimization):
+- (Root)
+  - (Unchanged)
+   |- [2,4]:2->1
+    - (Unchanged)
+     |- [1,1]:2->0
+      - [0,2]:2->1
+```
 
 ## Thanks
 
