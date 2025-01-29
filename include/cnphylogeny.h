@@ -18,6 +18,7 @@ typedef unsigned char copy_num;
  * left child, it shouldn't have a right child either.
  */
 struct cnp_node {
+    int id; /** The ID of the CNP */
     struct cnp_node *left; /** The left child */
     struct cnp_node *right; /** The right child */
     copy_num bins[]; /** The bins of the CNP */
@@ -29,7 +30,7 @@ struct cnp_node {
  *
  * This variable must be defined.
  */
-extern size_t cnp_len;
+extern int cnp_len;
 
 /**
  * @brief The maximum possible copy number
@@ -37,17 +38,6 @@ extern size_t cnp_len;
  * This variable must be defined.
  */
 extern copy_num max_copy_num;
-
-/**
- * @brief A matrix that stores the natural log probabilities of every possible
- *        configuration of two neighboring bins
- *
- * `neighbor_probs[i][j]` gives the log probability of observing a bin with copy
- * number `i` followed by a bin with copy number `j` (in the same CNP).
- *
- * This variable must be defined.
- */
-extern double **neighbor_probs;
 
 /**
  * @brief A matrix that stores the natural log probabilities of every possible
@@ -60,6 +50,17 @@ extern double **neighbor_probs;
  * This variable must be defined.
  */
 extern double **mutation_probs;
+
+/**
+ * @brief A matrix that stores the natural log probabilities of every possible
+ *        configuration of two neighboring bins
+ *
+ * `neighbor_probs[i][j]` gives the log probability of observing a bin with copy
+ * number `i` followed by a bin with copy number `j` (in the same CNP).
+ *
+ * This variable must be defined.
+ */
+extern double **neighbor_probs;
 
 
 /**
@@ -79,13 +80,15 @@ double **prob_matrix_new(double *probs);
 /**
  * @brief Create a new CNP node
  *
- * This function assigns each bin a copy number of 0.
- *
+ * @param id The ID of the CNP
+ * @param cnp A pointer a CNP, or `NULL` to initialize all bins to zero
  * @param left The left child
  * @param right The right child
  * @return A pointer to the new node
  */
 struct cnp_node *cnp_node_new(
+    int id,
+    copy_num *cnp,
     struct cnp_node *left,
     struct cnp_node *right
 );
@@ -104,15 +107,9 @@ void cnp_node_free(struct cnp_node *node);
  *
  * @param root A pointer to the root of the phylogeny
  * @param burn_in The number of samples to discard
- * @param sample_rate The rate at which to record samples
  * @param sample_count The number of samples to record
  */
-void phylogeny_optimize(
-    struct cnp_node *root,
-    int burn_in,
-    int sample_rate,
-    int sample_count
-);
+void phylogeny_optimize(struct cnp_node *root, int burn_in, int sample_count);
 
 
 #endif

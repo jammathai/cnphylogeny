@@ -3,7 +3,7 @@
 #include <assert.h>
 
 
-size_t cnp_len = 1000;
+int cnp_len = 1000;
 copy_num max_copy_num;
 double **neighbor_probs;
 double **mutation_probs;
@@ -12,9 +12,11 @@ double **mutation_probs;
 int main()
 {
     struct cnp_node *node = cnp_node_new(
+        NULL,
         cnp_node_new(
-            cnp_node_new(NULL, NULL),
-            cnp_node_new(NULL, NULL)
+            NULL,
+            cnp_node_new(NULL, NULL, NULL),
+            cnp_node_new(NULL, NULL, NULL)
         ),
         NULL
     );
