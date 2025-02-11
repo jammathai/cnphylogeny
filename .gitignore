@@ -1,7 +1,5 @@
 .vscode
 build
-phylogeny.csv
-phylogeny.nwk
 tests/*
 !tests/Makefile
 !tests/test.sh

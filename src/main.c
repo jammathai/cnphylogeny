@@ -16,7 +16,7 @@ copy_num max_copy_num;
 double **mutation_probs;
 double **neighbor_probs;
 
-static int burn_in = 1000000;
+static int burn_in = 50000;
 static int sample_count = 1000000;
 static char *mutation_probs_filename = "data/mutation-probs.csv";
 static char *neighbor_probs_filename = "data/neighbor-probs.csv";
