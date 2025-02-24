@@ -89,12 +89,12 @@ int main(int argc, char **argv)
         output = timestamp;
     }
 
-    printf("%s (before optimization):\n", argv[optind]);
+    printf("%s (score: %lf):\n", argv[optind], phylogeny_analyze(root));
     print_phylogeny(root, NULL, "");
 
     phylogeny_optimize(root, burn_in, sample_count);
 
-    printf("\n%s (after optimization):\n", output);
+    printf("\n%s (score: %lf):\n", output, phylogeny_analyze(root));
     print_phylogeny(root, NULL, "");
 
     write_phylogeny(output);

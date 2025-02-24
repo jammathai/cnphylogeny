@@ -103,6 +103,16 @@ void cnp_node_free(struct cnp_node *node);
 
 
 /**
+ * @brief Compute a value proportional to the likelihood of a phylogeny
+ * 
+ * @param root A pointer to the root of the phylogeny
+ * @return A value proportional to the likelihood, which can be used to compare
+ *         possible phylogenies
+ */
+double phylogeny_analyze(struct cnp_node *root);
+
+
+/**
  * @brief Use Gibbs sampling to optimize a phylogeny
  *
  * @param root A pointer to the root of the phylogeny

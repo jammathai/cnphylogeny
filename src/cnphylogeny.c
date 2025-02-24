@@ -16,6 +16,7 @@ struct gibbs_node {
 };
 
 
+static double phylogeny_analyze_internal(struct cnp_node *root);
 static struct gibbs_node *gibbs_node_new(
     struct cnp_node *src,
     struct gibbs_node *parent
@@ -71,18 +72,59 @@ void cnp_node_free(struct cnp_node *node)
 }
 
 
+double phylogeny_analyze(struct cnp_node *root)
+{
+    double result = 0;
+
+    for (int i = 0; i < cnp_len; i++) {
+        if (root->left)
+            result += mutation_probs[root->bins[i]][root->left->bins[i]];
+        if (root->right)
+            result += mutation_probs[root->bins[i]][root->right->bins[i]];
+    }
+
+    if (root->left)
+        result += phylogeny_analyze_internal(root->left);
+    if (root->right)
+        result += phylogeny_analyze_internal(root->right);
+
+    return result;
+}
+
+
 void phylogeny_optimize(struct cnp_node *root, int burn_in, int sample_count)
 {
     struct gibbs_node *gibbs_root = gibbs_node_new(root, NULL);
+    double max_score = -INFINITY;
 
-    for (int i = 0; i < burn_in; i++)
-        gibbs_iteration(gibbs_root, false);
-    for (int i = 0; i < sample_count; i++)
-        gibbs_iteration(gibbs_root, true);
+    for (int i = 0; i < burn_in; i++) gibbs_iteration(gibbs_root, false);
+    for (int i = 0; i < sample_count; i++) gibbs_iteration(gibbs_root, true);
 
     cnp_get_mode(root, gibbs_root);
 
     gibbs_node_free(gibbs_root);
+}
+
+
+static double phylogeny_analyze_internal(struct cnp_node *root)
+{
+    if (!root->left) return 0;
+
+    double result = 0;
+
+    for (int i = 0; i < cnp_len - 1; i++)
+        result += neighbor_probs[root->bins[i]][root->bins[i + 1]];
+
+    for (int i = 0; i < cnp_len; i++) {
+        result += mutation_probs[root->bins[i]][root->left->bins[i]];
+        if (root->right)
+            result += mutation_probs[root->bins[i]][root->right->bins[i]];
+    }
+
+    result += phylogeny_analyze(root->left);
+    if (root->right) result += phylogeny_analyze(root->right);
+
+    return result;
 }
 
 
@@ -122,29 +164,32 @@ static void gibbs_iteration(struct gibbs_node *node, bool count)
     gibbs_iteration(node->right, count);
 
     if (node->parent) {
+        double probs[max_copy_num + 1];
+
         for (int i = 0; i < cnp_len; i++) {
-            double max_prob = -INFINITY;
-            copy_num best = 0;
-            for (copy_num s = 0; s < max_copy_num + 1; s++) {
-                double prob = (
+            for (copy_num s = 0; s <= max_copy_num; s++) {
+                probs[s] = (
                     mutation_probs[node->parent->prev[i]][s] +
                     mutation_probs[s][node->left->prev[i]]
                 );
                 if (node->right)
-                    prob += mutation_probs[s][node->right->prev[i]];
+                    probs[s] += mutation_probs[s][node->right->prev[i]];
                 if (i > 0)
-                    prob += neighbor_probs[node->prev[i - 1]][s];
+                    probs[s] += neighbor_probs[node->prev[i - 1]][s];
                 if (i < cnp_len - 1)
-                    prob += neighbor_probs[s][node->prev[i + 1]];
-
-                if (prob > max_prob) {
-                    best = s;
-                    max_prob = prob;
-                }
+                    probs[s] += neighbor_probs[s][node->prev[i + 1]];
             }
 
-            node->bins[i] = best;
-            if (count) node->counts[i][best]++;
+            double random = (double) rand() / RAND_MAX;
+            double total = 0;
+            for (copy_num s = 0; s <= max_copy_num; s++) {
+                total += exp(probs[s]);
+                if (random < total) {
+                    node->bins[i] = s;
+                    if (count) node->counts[i][s]++;
+                    break;
+                }
+            }
         }
     }
 
