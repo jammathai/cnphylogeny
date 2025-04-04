@@ -116,10 +116,9 @@ double phylogeny_analyze(struct cnp_node *root);
  * @brief Use Gibbs sampling to optimize a phylogeny
  *
  * @param root A pointer to the root of the phylogeny
- * @param burn_in The number of samples to discard
- * @param sample_count The number of samples to record
+ * @param sample_count The number of samples to take
  */
-void phylogeny_optimize(struct cnp_node *root, int burn_in, int sample_count);
+void phylogeny_optimize(struct cnp_node *root, int sample_count);
 
 
 #endif

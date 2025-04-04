@@ -16,7 +16,6 @@ copy_num max_copy_num;
 double **mutation_probs;
 double **neighbor_probs;
 
-static int burn_in = 50000;
 static int sample_count = 1000000;
 static char *mutation_probs_filename = "data/mutation-probs.csv";
 static char *neighbor_probs_filename = "data/neighbor-probs.csv";
@@ -45,14 +44,8 @@ static FILE *file_open(char *filename, char *modes);
 int main(int argc, char **argv)
 {
     int opt;
-    while ((opt = getopt (argc, argv, "b:c:hm:n:o:")) != -1) {
+    while ((opt = getopt (argc, argv, "b:hm:n:o:s:")) != -1) {
         switch (opt) {
-            case 'b':
-                burn_in = strtol(optarg, NULL, 10);
-                break;
-            case 'c':
-                sample_count = strtol(optarg, NULL, 10);
-                break;
             case 'h':
                 print_usage();
                 return EXIT_SUCCESS;
@@ -64,6 +57,9 @@ int main(int argc, char **argv)
                 break;
             case 'o':
                 output = optarg;
+                break;
+            case 's':
+                sample_count = strtol(optarg, NULL, 10);
                 break;
             default:
                 print_usage();
@@ -92,7 +88,7 @@ int main(int argc, char **argv)
     printf("%s (score: %lf):\n", argv[optind], phylogeny_analyze(root));
     print_phylogeny(root, NULL, "");
 
-    phylogeny_optimize(root, burn_in, sample_count);
+    phylogeny_optimize(root, sample_count);
 
     printf("\n%s (score: %lf):\n", output, phylogeny_analyze(root));
     print_phylogeny(root, NULL, "");
@@ -400,19 +396,17 @@ static void print_usage()
         "                 define a phylogeny\n"
         "\n"
         "Options:\n"
-        "    -b <int>        Number of burn-in samples (default: %d)\n"
-        "    -c <int>        Number of samples to record (default: %d)\n"
         "    -h              Print this message and exit\n"
         "    -m <csv>        Source mutation probabilities from the specified CSV file\n"
         "                    (default: %s)\n"
         "    -n <csv>        Source neighbor probabilities from the specified CSV file\n"
         "                    (default: %s)\n"
         "    -o <phylogeny>  Write the optimized phylogeny to <phylogeny>.nwk and\n"
-        "                    <phylogeny>.csv (default: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS])\n",
-        burn_in,
-        sample_count,
+        "                    <phylogeny>.csv (default: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS])\n"
+        "    -s <int>        Number of samples to record (default: %d)\n",
         mutation_probs_filename,
-        neighbor_probs_filename
+        neighbor_probs_filename,
+        sample_count
     );
 }
 
