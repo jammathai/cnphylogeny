@@ -4,3 +4,6 @@ tests/*
 !tests/Makefile
 !tests/test.sh
 !tests/*.c
+data/*
+!data/mutation-probs.csv
+!data/neighbor-probs.csv

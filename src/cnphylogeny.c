@@ -23,7 +23,7 @@ static struct gibbs_node *gibbs_node_new(
     struct gibbs_node *parent
 );
 static void gibbs_iteration(struct gibbs_node *node);
-static copy_num sample(double *probs);
+static copy_num sample(double *probs, double total);
 static void gibbs_node_free(struct gibbs_node *node);
 static void gibbs_node_set_best(struct gibbs_node *node);
 static void gibbs_node_get_best(struct gibbs_node *src, struct cnp_node *dst);
@@ -209,6 +209,8 @@ static void gibbs_iteration(struct gibbs_node *node)
     if (node->parent) {
         double probs[max_copy_num + 1];
         for (int i = 0; i < cnp_len; i++) {
+            double total = 0;
+
             for (copy_num s = 0; s <= max_copy_num; s++) {
                 probs[s] = (
                     mutation_probs[node->parent->prev[i]][s] +
@@ -221,9 +223,11 @@ static void gibbs_iteration(struct gibbs_node *node)
                 if (i < cnp_len - 1)
                     probs[s] += neighbor_probs[s][node->prev[i + 1]];
                 probs[s] = exp(probs[s]);
+                // logsumexp
+                total += probs[s];
             }
 
-            copy_num s = sample(probs);
+            copy_num s = sample(probs, total);
             node->bins[i] = s;
         }
     }
@@ -233,12 +237,8 @@ static void gibbs_iteration(struct gibbs_node *node)
 }
 
 
-static copy_num sample(double *probs) {
-    double total = 0;
-    for (int i = 0; i <= max_copy_num; i++) total += probs[i];
-    for (int i = 0; i <= max_copy_num; i++) probs[i] /= total;
-
-    double r = (double) rand() / RAND_MAX;
+static copy_num sample(double *probs, double total) {
+    double r = (double) rand() / RAND_MAX * total;
     double sum = 0;
     for (copy_num s = 0;; s++) {
         sum += probs[s];
