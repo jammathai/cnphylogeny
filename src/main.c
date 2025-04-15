@@ -26,11 +26,11 @@ static struct cnp_node *root;
 
 
 static double **read_prob_matrix(char *filename);
-static struct cnp_node *read_phylogeny(char *name);
+static struct cnp_node *read_phylogeny(char *nwk, char *csv);
 static void write_phylogeny(char *name);
 static copy_num *read_cnps(char *filename);
 static struct cnp_node *parse_newick(char *start, char *end);
-static void write_node(struct cnp_node *node, FILE *file);
+static void get_cnps(struct cnp_node *node);
 static void print_phylogeny(
     struct cnp_node *node,
     struct cnp_node *parent,
@@ -70,12 +70,12 @@ int main(int argc, char **argv)
     mutation_probs = read_prob_matrix(mutation_probs_filename);
     neighbor_probs = read_prob_matrix(neighbor_probs_filename);
 
-    if (optind >= argc) {
+    if (optind + 1 >= argc) {
         print_usage();
         return EXIT_FAILURE;
     }
 
-    root = read_phylogeny(argv[optind]);
+    root = read_phylogeny(argv[optind], argv[optind + 1]);
 
     if (!output) {
         time_t now = time(NULL);
@@ -149,25 +149,17 @@ static double **read_prob_matrix(char *filename)
 }
 
 
-static struct cnp_node *read_phylogeny(char *name)
+static struct cnp_node *read_phylogeny(char *nwk, char *csv)
 {
-    char filename[strlen(name) + 5];
-    strncpy(filename, name, strlen(name) + 1);
+    read_cnps(csv);
 
-    strcat(filename, ".csv");
-    read_cnps(filename);
-
-    filename[strlen(name)] = '\0';
-    strcat(filename, ".nwk");
-    FILE *file = file_open(filename, "r");
-
+    FILE *file = file_open(nwk, "r");
     fseek(file, 0, SEEK_END);
     long file_size = ftell(file);
     fseek(file, 0, SEEK_SET);
     char newick[file_size + 1];
     fread(newick, 1, file_size, file);
     newick[file_size] = '\0';
-
     fclose(file);
 
     return parse_newick(newick, newick + file_size);
@@ -176,18 +168,9 @@ static struct cnp_node *read_phylogeny(char *name)
 
 static void write_phylogeny(char *name)
 {
-    char filename[strlen(name) + 5];
-    strncpy(filename, name, strlen(name) + 1);
+    get_cnps(root);
 
-    strcat(filename, ".nwk");
-    FILE *file = file_open(filename, "w");
-    write_node(root, file);
-    fclose(file);
-
-    filename[strlen(name)] = '\0';
-    strcat(filename, ".csv");
-    file = file_open(filename, "w");
-
+    FILE *file = file_open(name, "w");
     for (int i = 0; i < cnps_len / cnp_len; i++) {
         for (int j = 0; j < cnp_len; j++) {
             fprintf(file, "%hhu", cnps[i * cnp_len + j]);
@@ -291,21 +274,14 @@ static struct cnp_node *parse_newick(char *start, char *end)
 }
 
 
-static void write_node(struct cnp_node *node, FILE *file)
+static void get_cnps(struct cnp_node *node)
 {
     if (!node) return;
 
     if (node->left) {
-        putc('(', file);
-        write_node(node->left, file);
-        if (node->right) {
-            putc(',', file);
-            write_node(node->right, file);
-        }
-        putc(')', file);
+        get_cnps(node->left);
+        if (node->right) get_cnps(node->right);
     }
-
-    fprintf(file, "%d", node->id);
 
     memcpy(cnps + node->id * cnp_len, node->bins, cnp_len);
 }
@@ -389,21 +365,21 @@ static void print_node(struct cnp_node *node, struct cnp_node *parent)
 static void print_usage()
 {
     printf(
-        "Usage: cnphylogeny [options] <phylogeny>\n"
+        "Usage: cnphylogeny [options] <nwk> <csv>\n"
         "\n"
         "Arguments:\n"
-        "    <phylogeny>  The shared basename of the Newick file and CSV file that\n"
-        "                 define a phylogeny\n"
+        "    <nwk>  The Newick file containing the phylogeny structure\n"
+        "    <csv>  The CSV containing CNPs for each phylogeny node\n"
         "\n"
         "Options:\n"
-        "    -h              Print this message and exit\n"
-        "    -m <csv>        Source mutation probabilities from the specified CSV file\n"
-        "                    (default: %s)\n"
-        "    -n <csv>        Source neighbor probabilities from the specified CSV file\n"
-        "                    (default: %s)\n"
-        "    -o <phylogeny>  Write the optimized phylogeny to <phylogeny>.nwk and\n"
-        "                    <phylogeny>.csv (default: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS])\n"
-        "    -s <int>        Number of samples to record (default: %d)\n",
+        "    -h        Print this message and exit\n"
+        "    -m <csv>  Source mutation probabilities from the specified CSV file\n"
+        "              (default: %s)\n"
+        "    -n <csv>  Source neighbor probabilities from the specified CSV file\n"
+        "              (default: %s)\n"
+        "    -o <csv>  Write the optimized CNPs to the specified CSV file\n"
+        "              (default: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS].csv)\n"
+        "    -s <int>  Number of samples to record (default: %d)\n",
         mutation_probs_filename,
         neighbor_probs_filename,
         sample_count
