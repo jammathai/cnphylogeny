@@ -7,3 +7,4 @@ tests/*
 data/*
 !data/mutation-probs.csv
 !data/neighbor-probs.csv
+util/__pycache__

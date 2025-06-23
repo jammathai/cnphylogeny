@@ -85,14 +85,7 @@ int main(int argc, char **argv)
         output = timestamp;
     }
 
-    printf("%s (score: %lf):\n", argv[optind], phylogeny_analyze(root));
-    print_phylogeny(root, NULL, "");
-
     phylogeny_optimize(root, sample_count);
-
-    printf("\n%s (score: %lf):\n", output, phylogeny_analyze(root));
-    print_phylogeny(root, NULL, "");
-
     write_phylogeny(output);
 
     return EXIT_SUCCESS;

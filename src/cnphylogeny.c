@@ -106,7 +106,6 @@ void phylogeny_optimize(struct cnp_node *root, int sample_count)
         if (score > max_score) {
             max_score = score;
             gibbs_node_set_best(gibbs_root);
-            printf("Max Score: %lf\n", max_score);
         }
     }
 

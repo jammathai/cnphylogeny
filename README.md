@@ -60,7 +60,7 @@ specify the neighbor probability matrix (default:
 
 ### Defining a Phylogeny
 
-A phylogeny is defined by two files with the same basename:
+A phylogeny is defined by two files:
 
 - A CSV file that stores each node's CNP; for example, `my-phylogeny.csv`:
 
@@ -86,9 +86,7 @@ A phylogeny is defined by two files with the same basename:
   (rows are zero-indexed). In this example, the root node (0) corresponds to the
   first row of `my-phylogeny.csv`, which stores the CNP $(2, 2, 2, 2, 2)$.
 
-When running `cnphylogeny`, use the shared basename of these two files to refer
-to the phylogeny. For example, `cnphylogeny my-phylogney` optimizes the
-phylogeny defined above, which looks like this:
+`my-phylogeny.csv` and `my-phylogeny.nwk` define a phylogeny that looks like this:
 
 ```mermaid
 graph TD;
@@ -102,86 +100,31 @@ graph TD;
 Running `cnphylogeny -h` prints the following usage message:
 
 ```
-Usage: cnphylogeny [options] <phylogeny>
+Usage: cnphylogeny [options] <nwk> <csv>
 
 Arguments:
-    <phylogeny>  The shared basename of the Newick file and CSV file that
-                 define a phylogeny
+    <nwk>  The Newick file containing the phylogeny structure
+    <csv>  The CSV containing CNPs for each phylogeny node
 
 Options:
-    -b <int>        Number of burn-in samples (default: 1000000)
-    -c <int>        Number of samples to record (default: 1000000)
-    -h              Print this message and exit
-    -m <csv>        Source mutation probabilities from the specified CSV file
-                    (default: data/mutation-probs.csv)
-    -n <csv>        Source neighbor probabilities from the specified CSV file
-                    (default: data/neighbor-probs.csv)
-    -o <phylogeny>  Write the optimized phylogeny to <phylogeny>.nwk and
-                    <phylogeny>.csv (default: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS])
-```
-
-`cnphylogeny` prints the phylogeny before and after optimization. Since CNPs are
-usually far too long to be human-readable, each node is printed in relation to
-its parent. For example, consider a parent node and a child node with the
-following CNPs:
-
-| Parent            | Child             |
-| :---------------: | :---------------: |
-| $(0, 0, 0, 0, 0)$ | $(2, 2, 0, 1, 1)$ |
-
-These CNPs can be broken up into two regions:
-
-| Interval | Parent   | Child    | Mutation? |
-| :------: | :------: | :------: | :-------: |
-| $[0, 1]$ | $(0, 0)$ | $(2, 2)$ | Yes       |
-| $[2, 2]$ | $(0)$    | $(0)$    | No        |
-| $[3, 4]$ | $(0, 0)$ | $(1, 1)$ | Yes       |
-
-This differences between these regions are printed:
-
-```
-[0,1]:0->2 [3,4]:0->1
-```
-
-The example phylogeny `my-phylogeny`, defined above, is printed like this:
-
-```
-- (Root)
-  - [0,4]:2->0
-   |- [0,1]:0->2 [2,4]:0->1
-    - (Unchanged)
-     |- [0,0]:0->2 [2,4]:0->2
-      - [0,2]:0->1 [3,4]:0->2
+    -h        Print this message and exit
+    -m <csv>  Source mutation probabilities from the specified CSV file
+              (default: data/mutation-probs.csv)
+    -n <csv>  Source neighbor probabilities from the specified CSV file
+              (default: data/mutation-probs.csv)
+    -o <csv>  Write the optimized CNPs to the specified CSV file
+              (default: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS].csv)
+    -s <int>  Number of samples to record (default: 1000000)
 ```
 
 We might optimize this phylogeny by running the following command:
 
 ```
-cnphylogeny -b 10 -c 20 -o my-optimized-phylogeny my-phylogeny
+cnphylogeny -c 20 -o optimized-phylogeny.csv my-phylogeny.nwk my-phylogeny.csv
 ```
 
-This will optimize `my-phylogeny`, ignoring the first 10 iterations of Gibbs
-sampling and subsequently recording 20 samples. The resulting phylogeny will be
-written to `my-optimized-phylogeny.csv` and `my-optimized-phylogeny.nwk`. This
-command should produce the following output:
-
-```
-my-phylogeny (before optimization):
-- (Root)
-  - [0,4]:2->0
-   |- [0,1]:0->2 [2,4]:0->1
-    - (Unchanged)
-     |- [0,0]:0->2 [2,4]:0->2
-      - [0,2]:0->1 [3,4]:0->2
-
-my-optimized-phylogeny (after optimization):
-- (Root)
-  - (Unchanged)
-   |- [2,4]:2->1
-    - (Unchanged)
-     |- [1,1]:2->0
-      - [0,2]:2->1
-```
+This will optimize `my-phylogeny`, recording 20 samples. The resulting copy
+number profiles will be written to `optimized-phylogeny.csv`.
 
 ## Thanks
 
